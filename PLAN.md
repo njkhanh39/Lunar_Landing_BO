@@ -3,7 +3,7 @@
 ## Phase 1: The Environment Setup
 - [ ] Install dependencies.
 - [ ] Create `env_wrapper.py`.
-- [ ] Write a function `run_random_agent()` that starts `LunarLander-v4`, takes random actions, and renders the screen.
+- [ ] Write a function `run_random_agent()` that starts `LunarLander-v3`, takes random actions, and renders the screen.
 - [✅] **Goal:** Verify the window pops up and the ship crashes.
 
 ## Phase 2: The Heuristic Controller (The "Robot")
@@ -21,7 +21,7 @@
     - Takes `[k_p_angle, k_d_angle, k_p_hover, k_d_hover]`.
     - Runs 1 full episode of the game.
     - Returns the `Total Reward`.
-- [ ] **Goal:** You can manually type in numbers and get a score back.
+- [✅] **Goal:** You can manually type in numbers and get a score back.
 
 ## Phase 4: The BoTorch Loop (main.py)
 - [ ] Initialize BoTorch:
