@@ -1,0 +1,3 @@
+# should have Pytorch, Botorch, GPytorch, numpy, matplotlib and scipy
+gymnasium[box2d]>=0.29.1
+scipy
