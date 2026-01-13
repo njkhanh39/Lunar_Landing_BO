@@ -7,11 +7,19 @@ from botorch.acquisition import UpperConfidenceBound
 from botorch.optim import optimize_acqf
 from env_wrapper import evaluate_parameters
 from botorch.utils.transforms import standardize # deal with large score from agent. GP works well for small y's, heuristically [-2, 2]
+from botorch.models.transforms import Normalize # small x input is good too (0->1)
+
+DTYPE = torch.double
 
 class BayesianOptimizer():
-    def __init__(self, min_x=0, max_x=30, x_row = 5, x_col = 4):
-        self.train_x = (min_x - max_x) * torch.rand(x_row, x_col) + max_x # uniform on [min, max], shape (x_row, x_col)
-        self.train_y = torch.zeros(x_row, 1)
+    def __init__(self, min_x=0, max_x=2, x_row = 5, x_col = 4):
+        self.train_x = (min_x - max_x) * torch.rand(x_row, x_col, dtype=DTYPE) + max_x # uniform on [min, max], shape (x_row, x_col)
+        self.train_y = torch.zeros(x_row, 1, dtype=DTYPE)
+
+
+        self.bound = torch.empty(2, x_col, dtype=DTYPE)
+        self.bound[0] = torch.full((x_col, ), fill_value=min_x)
+        self.bound[1] = torch.full((x_col, ), fill_value=max_x)
         
         # train y
         for i in range(0, x_row):
@@ -20,10 +28,8 @@ class BayesianOptimizer():
             # NOTE: this is raw y-score. We should standardize when running Gaussian Process
             self.train_y[i] = evaluate_parameters(params_list, render=False)
 
-        # bound for x
-        self.bound = torch.tensor(2, x_col)
-        self.bound[0] = torch.full(x_col, fill_value=min_x)
-        self.bound[1] = torch.full(x_col, fill_value=max_x)
+
+            
     
     # one iteration - returns candidate
     def update_posterior(self, x_new = None, y_new = None):
@@ -35,15 +41,20 @@ class BayesianOptimizer():
 
         # init
 
-        # don't forget to STANDARDIZE y for faster convergence
-        gp = SingleTaskGP(self.train_x, standardize(self.train_y))
+        # don't forget to STANDARDIZE y and NORMALIZE x for faster convergence
+        gp = SingleTaskGP(
+            self.train_x, 
+            standardize(self.train_y), 
+            input_transform=Normalize(d=self.train_x.shape[-1])
+        )
         mll = ExactMarginalLogLikelihood(gp.likelihood, gp)
 
         # update posterior
         fit_gpytorch_mll(mll) # already have some initial random data so ok
 
         # find next candidate
-        UCB = UpperConfidenceBound(gp, beta=0.8) # beta = coef controls explore vs exploit
+        UCB = UpperConfidenceBound(gp, beta=7) # beta = coef controls explore vs exploit
+        # beta large --> more explore
         candidate, acquisition_score = optimize_acqf(
             acq_function= UCB,
             bounds=self.bound,
