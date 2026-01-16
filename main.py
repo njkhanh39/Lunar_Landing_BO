@@ -5,7 +5,7 @@ from env_wrapper import evaluate_parameters
 
 # Config
 iters = 50
-b_opt = BayesianOptimizer(min_x=0.0, max_x=0.5, x_row=5, x_col=4)
+b_opt = BayesianOptimizer(min_x=0.0, max_x=20.0, x_row=10, x_col=4)
 
 # Variables to store the result of the previous loop
 prev_candidate = None
