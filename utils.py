@@ -4,6 +4,7 @@ from botorch.models import SingleTaskGP
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.fit import fit_gpytorch_mll
 from botorch.acquisition import ExpectedImprovement
+from botorch.acquisition import UpperConfidenceBound
 from botorch.optim import optimize_acqf
 from env_wrapper import evaluate_parameters
 from botorch.utils.transforms import standardize # deal with large score from agent. GP works well for small y's, heuristically [-2, 2]
@@ -56,13 +57,12 @@ class BayesianOptimizer():
         # update posterior
         fit_gpytorch_mll(mll) # already have some initial random data so ok
 
-        # try Expected Improvement for exploitation
-        best_value = self.train_y.max()
-        EI = ExpectedImprovement(gp, best_f=best_value)
+        # UCB seems better
+        UCB = UpperConfidenceBound(gp, beta=4)
         
         
         candidate, acquisition_score = optimize_acqf(
-            acq_function=EI,
+            acq_function=UCB,
             bounds=self.bounds,
             q=1,
             num_restarts=10,
